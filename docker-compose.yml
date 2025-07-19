@@ -13,7 +13,7 @@ services:
       - db
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/helios
-      - SECRET_KEY=insecure_development_key_change_in_production
+      - SECRET_KEY=YOUR_SECRET_KEY_HERE
       - ENVIRONMENT=development
       - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
     volumes:
@@ -81,28 +81,4 @@ networks:
     driver: bridge
 
 volumes:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - helios-network
-
-  # 数据库管理工具
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
-    networks:
-      - helios-network
-
-networks:
-  helios-network:
-    driver: bridge
-
-volumes:
+  postgres_data:

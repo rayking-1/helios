@@ -1,24 +1,22 @@
 import os
-from openai import OpenAI
+from dashscope import Generation
 
-# 直接使用API密钥，而不是通过环境变量
-client = OpenAI(
-    api_key="sk-101435ec51774961a9a835efbe7c6f4b",
-    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+# 创建客户端
+client = Generation(
+    api_key=os.getenv("QWEN_API_KEY", ""),  # Replace hardcoded key with environment variable
+    model="qwen-turbo"
 )
 
-try:
-    print("正在调用Qwen API...")
-    completion = client.chat.completions.create(
-        model="qwen-plus",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "你是谁？"},
-        ],
-    )
-    print("✅ API调用成功!")
-    print(completion.model_dump_json())
-except Exception as e:
-    print(f"❌ API调用失败: {e}")
-    print(f"错误类型: {type(e).__name__}") 
+# 发送请求
+response = client.call(
+    messages=[
+        {"role": "system", "content": "你是由大搜车开发的通义千问大模型。"},
+        {"role": "user", "content": "你好，请进行自我介绍。"}
+    ]
+)
+
+# 打印完整响应
+print(f"Status code: {response['status_code']}")
+print(f"Request ID: {response['request_id']}")
+print(f"Output:\n{response['output']['choices'][0]['message']['content']}") 
  

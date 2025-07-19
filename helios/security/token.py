@@ -17,7 +17,7 @@ from helios.database.session import get_db
 from helios.repositories.user_repository import UserRepository
 
 # 配置
-SECRET_KEY = os.getenv("SECRET_KEY", "insecure_development_key")
+SECRET_KEY = os.getenv("SECRET_KEY")  # Make sure to set this in your .env file
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24小时
 
