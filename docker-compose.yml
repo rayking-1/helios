@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # 后端 API 服务
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/helios
+      - SECRET_KEY=insecure_development_key_change_in_production
+      - ENVIRONMENT=development
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+    volumes:
+      # 仅在开发环境中使用的卷映射，用于实时代码更新
+      # - ./helios:/app/helios
+      # - ./static:/app/static
+      - ./migrations:/app/migrations
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - helios-network
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./helios-frontend
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_BASE_URL=http://localhost:8000/api
+    depends_on:
+      - api
+    networks:
+      - helios-network
+
+  # 数据库服务
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=helios
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - helios-network
+
+  # 数据库管理工具
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - helios-network
+
+networks:
+  helios-network:
+    driver: bridge
+
+volumes:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - helios-network
+
+  # 数据库管理工具
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - helios-network
+
+networks:
+  helios-network:
+    driver: bridge
+
+volumes:

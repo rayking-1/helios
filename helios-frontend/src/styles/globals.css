@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --helios-bg: 18, 18, 18;
+    --helios-card: 34, 34, 34;
+  }
+
+  * {
+    @apply border-helios-border;
+  }
+
+  body {
+    @apply bg-helios-bg text-helios-text-primary;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 自定义滚动条 - 静奢风格 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-helios-bg;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-helios-border rounded-full;
+    transition: background-color 0.2s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-helios-text-tertiary;
+  }
+}
+
+@layer components {
+  /* 静奢按钮样式 */
+  .btn-primary {
+    @apply px-6 py-3 bg-helios-accent-primary text-white rounded-lg
+           transition-all duration-200 transform
+           hover:bg-opacity-90 hover:scale-[1.02]
+           active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 border border-helios-border text-helios-text-primary
+           rounded-lg transition-all duration-200
+           hover:border-helios-text-secondary hover:bg-helios-card;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 text-helios-text-secondary
+           transition-colors duration-200
+           hover:text-helios-text-primary;
+  }
+
+  /* 输入框样式 */
+  .input-primary {
+    @apply w-full px-4 py-3 bg-helios-card border border-helios-border
+           rounded-lg text-helios-text-primary placeholder-helios-text-tertiary
+           transition-all duration-200
+           focus:outline-none focus:border-helios-accent-primary
+           focus:ring-1 focus:ring-helios-accent-primary focus:ring-opacity-50;
+  }
+
+  /* 卡片样式 */
+  .card {
+    @apply bg-helios-card rounded-xl p-6 border border-helios-border
+           transition-all duration-300
+           hover:border-helios-text-tertiary;
+  }
+
+  /* 微光效果 */
+  .glow {
+    @apply relative;
+  }
+
+  .glow::before {
+    content: '';
+    @apply absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300;
+    background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(107, 91, 149, 0.1) 0%, 
+                transparent 50%);
+  }
+
+  .glow:hover::before {
+    @apply opacity-100;
+  }
+} 

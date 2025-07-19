@@ -1,0 +1,118 @@
+name: Deploy Helios App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test Application
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: helios_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-prod.txt
+        pip install pytest pytest-cov
+    
+    - name: Run tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/helios_test
+        SECRET_KEY: testing_secret_key
+      run: |
+        pytest --cov=helios
+
+  build-and-push:
+    name: Build and Push Docker Image
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/helios-app:latest
+          ghcr.io/${{ github.repository_owner }}/helios-app:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy-to-aws:
+    name: Deploy to AWS App Runner
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+    
+    - name: Deploy to App Runner
+      run: |
+        # 检查服务是否存在
+        if aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='helios-app']" | grep -q "helios-app"; then
+          # 更新现有服务
+          aws apprunner update-service \
+            --service-name helios-app \
+            --source-configuration imageRepository="{repositoryUrl=ghcr.io/${{ github.repository_owner }}/helios-app:${{ github.sha }},imageConfiguration={port=8000},imageIdentifier=ghcr.io/${{ github.repository_owner }}/helios-app:${{ github.sha }}}" \
+            --health-check-configuration '{"protocol":"HTTP","path":"/health","interval":10,"timeout":5,"healthyThreshold":3,"unhealthyThreshold":3}'
+        else
+          # 创建新服务
+          aws apprunner create-service \
+            --service-name helios-app \
+            --source-configuration imageRepository="{repositoryUrl=ghcr.io/${{ github.repository_owner }}/helios-app:${{ github.sha }},imageConfiguration={port=8000},imageIdentifier=ghcr.io/${{ github.repository_owner }}/helios-app:${{ github.sha }}}" \
+            --health-check-configuration '{"protocol":"HTTP","path":"/health","interval":10,"timeout":5,"healthyThreshold":3,"unhealthyThreshold":3}' \
+            --auto-scaling-configuration-arn $(aws apprunner list-auto-scaling-configurations --query "AutoScalingConfigurationSummaryList[0].AutoScalingConfigurationArn" --output text)
+        fi
+    
+    - name: Get App Runner URL
+      run: |
+        APP_RUNNER_URL=$(aws apprunner describe-service --service-name helios-app --query "Service.ServiceUrl" --output text)
+        echo "::set-output name=app_url::https://${APP_RUNNER_URL}"
+        echo "Helios app deployed to: https://${APP_RUNNER_URL}" 
+        

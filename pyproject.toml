@@ -1,0 +1,13 @@
+[project]
+name = "helios_adaptive_planner"
+version = "0.1.0"
+description = "The Helios Adaptive Planner Agent Team."
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["helios_backend*"]
+exclude = ["tests*"] 

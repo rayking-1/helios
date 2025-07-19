@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helios - 智能规划系统</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Helios 智能规划系统</h1>
+            <p class="subtitle">基于大型语言模型的自适应规划助手</p>
+        </header>
+        
+        <main>
+            <section class="task-form">
+                <h2>创建新任务</h2>
+                <form id="task-form">
+                    <div class="form-group">
+                        <label for="task-description">任务描述</label>
+                        <textarea id="task-description" name="description" rows="4" placeholder="请描述您需要完成的任务..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-priority">优先级</label>
+                        <select id="task-priority" name="priority">
+                            <option value="1">低</option>
+                            <option value="5" selected>中</option>
+                            <option value="10">高</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">提交任务</button>
+                </form>
+            </section>
+            
+            <section class="tasks-list">
+                <h2>任务列表</h2>
+                <div id="tasks-container">
+                    <p class="loading">加载中...</p>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2023 Helios 智能规划系统 | <a href="/docs" target="_blank">API 文档</a></p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskForm = document.getElementById('task-form');
+            const tasksContainer = document.getElementById('tasks-container');
+            
+            // 加载任务列表
+            async function loadTasks() {
+                tasksContainer.innerHTML = '<p class="loading">加载中...</p>';
+                
+                try {
+                    const response = await fetch('/api/tasks');
+                    const tasks = await response.json();
+                    
+                    if (tasks.length === 0) {
+                        tasksContainer.innerHTML = '<p class="empty">暂无任务</p>';
+                        return;
+                    }
+                    
+                    const tasksList = document.createElement('ul');
+                    tasksList.className = 'tasks';
+                    
+                    tasks.forEach(task => {
+                        const taskItem = document.createElement('li');
+                        taskItem.className = `task-item status-${task.status.toLowerCase()}`;
+                        
+                        taskItem.innerHTML = `
+                            <h3>${task.description.substring(0, 50)}${task.description.length > 50 ? '...' : ''}</h3>
+                            <div class="task-meta">
+                                <span class="task-status">${getStatusText(task.status)}</span>
+                                <span class="task-priority">优先级: ${getPriorityText(task.priority)}</span>
+                                <span class="task-date">创建于: ${new Date(task.created_at).toLocaleString()}</span>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn btn-small" onclick="viewTask('${task.id}')">查看详情</button>
+                            </div>
+                        `;
+                        
+                        tasksList.appendChild(taskItem);
+                    });
+                    
+                    tasksContainer.innerHTML = '';
+                    tasksContainer.appendChild(tasksList);
+                    
+                } catch (error) {
+                    console.error('加载任务失败:', error);
+                    tasksContainer.innerHTML = '<p class="error">加载任务失败，请稍后重试</p>';
+                }
+            }
+            
+            // 提交新任务
+            taskForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const description = document.getElementById('task-description').value;
+                const priority = document.getElementById('task-priority').value;
+                
+                try {
+                    const response = await fetch('/api/tasks', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            description,
+                            priority: parseInt(priority),
+                            user_id: 1 // 默认用户ID，实际应用中应从登录用户获取
+                        }),
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('提交任务失败');
+                    }
+                    
+                    // 重置表单
+                    taskForm.reset();
+                    
+                    // 重新加载任务列表
+                    loadTasks();
+                    
+                    alert('任务已提交成功！');
+                    
+                } catch (error) {
+                    console.error('提交任务失败:', error);
+                    alert('提交任务失败，请稍后重试');
+                }
+            });
+            
+            // 辅助函数
+            function getStatusText(status) {
+                const statusMap = {
+                    'PENDING': '待处理',
+                    'IN_PROGRESS': '处理中',
+                    'COMPLETED': '已完成',
+                    'FAILED': '失败'
+                };
+                return statusMap[status] || status;
+            }
+            
+            function getPriorityText(priority) {
+                if (priority >= 10) return '高';
+                if (priority >= 5) return '中';
+                return '低';
+            }
+            
+            // 初始加载任务列表
+            loadTasks();
+            
+            // 全局函数
+            window.viewTask = function(taskId) {
+                window.location.href = `/task/${taskId}`;
+            };
+        });
+    </script>
+</body>
+</html> 
