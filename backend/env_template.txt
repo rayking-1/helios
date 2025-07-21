@@ -1,0 +1,42 @@
+# 应用环境
+ENVIRONMENT=development
+
+# 后端API配置
+PORT=8000
+SECRET_KEY=your_secure_secret_key_here
+CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+
+# 数据库配置
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/helios
+
+# LLM API密钥
+OPENAI_API_KEY=your_openai_api_key
+DASHSCOPE_API_KEY=your_dashscope_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# 日志配置
+LOG_LEVEL=INFO
+
+# 复制此文件并重命名为.env，然后填入实际的配置值 
+ 
+ENVIRONMENT=development
+
+# 后端API配置
+PORT=8000
+SECRET_KEY=your_secure_secret_key_here
+CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+
+# 数据库配置
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/helios
+
+# LLM API密钥
+OPENAI_API_KEY=your_openai_api_key
+DASHSCOPE_API_KEY=your_dashscope_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# 日志配置
+LOG_LEVEL=INFO
+
+# 复制此文件并重命名为.env，然后填入实际的配置值 
+ 
+ 

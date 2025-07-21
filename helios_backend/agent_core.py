@@ -1,5 +1,5 @@
 # agent_core.py
-from autogen import AssistantAgent, UserProxyAgent
+from pyautogen import AssistantAgent, UserProxyAgent
 from config import llm_config, config_list_instance
 import logging
 

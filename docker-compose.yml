@@ -1,78 +1,55 @@
 version: '3.8'
 
 services:
-  # 后端 API 服务
-  api:
+  # 后端服务
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
+    container_name: helios_backend
     restart: always
     ports:
       - "8000:8000"
-    depends_on:
-      - db
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/helios
-      - SECRET_KEY=YOUR_SECRET_KEY_HERE
-      - ENVIRONMENT=development
-      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
-    volumes:
-      # 仅在开发环境中使用的卷映射，用于实时代码更新
-      # - ./helios:/app/helios
-      # - ./static:/app/static
-      - ./migrations:/app/migrations
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    depends_on:
+      - db
     networks:
       - helios-network
+    volumes:
+      - ./backend:/app
+      - ./logs:/app/logs
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   # 前端服务
   frontend:
     build:
       context: ./helios-frontend
-      dockerfile: Dockerfile.frontend
+      dockerfile: Dockerfile
+    container_name: helios_frontend
+    restart: always
     ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - VITE_API_BASE_URL=http://localhost:8000/api
+      - "80:80"
     depends_on:
-      - api
+      - backend
     networks:
       - helios-network
 
   # 数据库服务
   db:
-    image: postgres:15-alpine
+    image: postgres:15
+    container_name: helios_db
     restart: always
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=helios
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - helios-network
-
-  # 数据库管理工具
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
     networks:
       - helios-network
 

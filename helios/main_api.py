@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from helios.services import logger
-from helios.routers import tasks, websocket
+from helios.routers import tasks, websocket, adaptive_plan
 from helios.database.migrations import create_tables
 from helios.repositories.user_repository import UserRepository
 from helios.database.session import SessionLocal
@@ -53,10 +53,12 @@ def on_startup():
     create_tables() 
     logger.info("创建默认用户...")
     create_default_user()
+    logger.info("初始化智能体系统...")
+    # 智能体系统初始化由路由模块处理
     logger.info("Helios API服务启动完成")
 
 # 获取允许的CORS来源
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
 logger.info(f"配置CORS允许的来源: {cors_origins}")
 
 # 添加 CORS 中间件
@@ -74,6 +76,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # 包含 API 路由
 app.include_router(tasks.router, prefix="/api")
 app.include_router(websocket.router)
+app.include_router(adaptive_plan.router)  # 添加适应性规划路由
 
 # 将根路径指向 index.html
 @app.get("/", include_in_schema=False)
